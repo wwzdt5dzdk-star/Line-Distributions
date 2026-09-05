@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>LINE DISTRIBUTION</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f7f7fb;
+    color: #222;
+}
+
+.container {
+    max-width: 900px;
+    margin: auto;
+    padding: 25px 16px;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 8px;
+}
+
+.subtitle {
+    text-align: center;
+    color: #777;
+    margin-bottom: 25px;
+}
+
+.card {
+    background: white;
+    padding: 20px;
+    border-radius: 18px;
+    box-shadow: 0 5px 20px rgba(0,0,0,.08);
+    margin-bottom: 20px;
+}
+
+input {
+    width: 100%;
+    padding: 13px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    margin: 6px 0;
+    font-size: 15px;
+}
+
+button {
+    border: none;
+    padding: 12px 18px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: bold;
+    margin-top: 8px;
+}
+
+.add {
+    background: #222;
+    color: white;
+}
+
+.generate {
+    width: 100%;
+    background: #7c5cff;
+    color: white;
+    font-size: 16px;
+}
+
+.member {
+    display: grid;
+    grid-template-columns: 1fr 120px 40px;
+    gap: 8px;
+    align-items: center;
+}
+
+.remove {
+    background: #ffdddd;
+    color: #d00;
+}
+
+.result {
+    margin-top: 15px;
+}
+
+.row {
+    margin: 15px 0;
+}
+
+.name {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-weight: bold;
+}
+
+.bar-bg {
+    width: 100%;
+    height: 25px;
+    background: #eee;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.bar {
+    height: 100%;
+    width: 0;
+    background: #7c5cff;
+    border-radius: 20px;
+    transition: width .6s ease;
+}
+
+.total {
+    text-align: center;
+    font-size: 18px;
+    margin-top: 20px;
+    font-weight: bold;
+}
+
+@media(max-width:600px) {
+    .member {
+        grid-template-columns: 1fr 90px 40px;
+    }
+
+    .container {
+        padding: 15px 10px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>LINE DISTRIBUTION</h1>
+<div class="subtitle">
+    K-pop Line Distribution Generator
+</div>
+
+<div class="card">
+
+<label><b>Tên bài hát</b></label>
+<input id="song" placeholder="VD: Supernova">
+
+<h3>Thành viên</h3>
+
+<div id="members"></div>
+
+<button class="add" onclick="addMember()">
+    ＋ Thêm thành viên
+</button>
+
+<button class="generate" onclick="generate()">
+    TẠO LINE DISTRIBUTION
+</button>
+
+</div>
+
+<div class="card result" id="result" style="display:none;">
+
+<h2 id="resultTitle"></h2>
+
+<div id="chart"></div>
+
+<div class="total" id="total"></div>
+
+</div>
+
+</div>
+
+<script>
+
+let memberCount = 0;
+
+function addMember(name = "", line = "") {
+
+    memberCount++;
+
+    const div = document.createElement("div");
+
+    div.className = "member";
+
+    div.id = "member-" + memberCount;
+
+    div.innerHTML = `
+        <input 
+            class="member-name"
+            placeholder="Tên thành viên"
+            value="${name}"
+        >
+
+        <input 
+            class="member-line"
+            type="number"
+            min="0"
+            placeholder="Line"
+            value="${line}"
+        >
+
+        <button 
+            class="remove"
+            onclick="removeMember(${memberCount})">
+            ×
+        </button>
+    `;
+
+    document.getElementById("members").appendChild(div);
+}
+
+function removeMember(id) {
+    const element = document.getElementById("member-" + id);
+
+    if (element) {
+        element.remove();
+    }
+}
+
+function generate() {
+
+    const song =
+        document.getElementById("song").value.trim()
+        || "Untitled";
+
+    const names =
+        document.querySelectorAll(".member-name");
+
+    const lines =
+        document.querySelectorAll(".member-line");
+
+    let data = [];
+
+    for (let i = 0; i < names.length; i++) {
+
+        const name = names[i].value.trim();
+
+        const line = Number(lines[i].value);
+
+        if (name && line >= 0) {
+
+            data.push({
+                name: name,
+                line: line
+            });
+
+        }
+    }
+
+    if (data.length === 0) {
+        alert("Hãy thêm ít nhất một thành viên!");
+        return;
+    }
+
+    const total =
+        data.reduce((sum, member) =>
+            sum + member.line, 0);
+
+    data.sort((a,b) => b.line - a.line);
+
+    document.getElementById("result").style.display = "block";
+
+    document.getElementById("resultTitle").textContent =
+        song;
+
+    const chart =
+        document.getElementById("chart");
+
+    chart.innerHTML = "";
+
+    data.forEach(member => {
+
+        const percentage =
+            total === 0
+            ? 0
+            : (member.line / total * 100);
+
+        const row =
+            document.createElement("div");
+
+        row.className = "row";
+
+        row.innerHTML = `
+            <div class="name">
+                <span>${member.name}</span>
+                <span>
+                    ${member.line}
+                    (${percentage.toFixed(1)}%)
+                </span>
+            </div>
+
+            <div class="bar-bg">
+                <div class="bar"
+                     style="width:${percentage}%">
+                </div>
+            </div>
+        `;
+
+        chart.appendChild(row);
+
+    });
+
+    document.getElementById("total").textContent =
+        "Tổng line: " + total;
+}
+
+
+// Thành viên mẫu
+addMember("Member 1", 30);
+addMember("Member 2", 25);
+addMember("Member 3", 20);
+addMember("Member 4", 15);
+addMember("Member 5", 10);
+
+</script>
+
+</body>
+</html>
